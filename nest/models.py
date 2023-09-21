@@ -1,8 +1,10 @@
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class Building(models.Model):
     location = models.CharField(max_length=255)
-    # icon = models.ImageField(upload_to='building_icons/', blank=True, null=True)
+    num_floors = models.PositiveIntegerField(default=1)
 
     def __str__(self):
         return self.location
@@ -12,10 +14,13 @@ class Building(models.Model):
 
     def total_building_income(self):
         return sum(floor.total_floor_income() for floor in self.floors.all())
+    
 
 class Floor(models.Model):
-    building = models.ForeignKey(Building, on_delete=models.CASCADE, related_name="floors")
     floor_number = models.PositiveIntegerField()
+    building = models.ForeignKey(Building, on_delete=models.CASCADE, related_name="floors")
+    num_appartments = models.PositiveIntegerField(default=1)
+
 
     def total_floor_expenses(self):
         return sum(apartment.apartment_expense for apartment in self.apartments.all())
@@ -25,6 +30,7 @@ class Floor(models.Model):
 
     def __str__(self):
         return f"Building {self.building.location} - Floor {self.floor_number}"
+    
 
 class Apartment(models.Model):
     appartment_number = models.PositiveIntegerField()
@@ -36,8 +42,12 @@ class Apartment(models.Model):
     apartment_income = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     # icon = models.ImageField(upload_to='apartment_icons/', blank=True, null=True)
 
-    def __str__(self):
-        return f"Floor {self.floor.floor_number} - Apt {self.pk} - {self.appartment_number} bedrooms"
+@property
+def is_occupied(self):
+        return self.tenants.exists()
+
+def __str__(self):
+    return f"Floor {self.floor.floor_number} - Apt {self.apartment_number} - {self.num_bedrooms} bedrooms"
 
 class Tenant(models.Model):
     first_name = models.CharField(max_length=255)
@@ -50,3 +60,17 @@ class Tenant(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+    
+   
+ 
+@receiver(post_save, sender=Building)
+def create_floors_for_building(sender, instance, created, **kwargs):
+    if created:
+        for i in range(1, instance.num_floors + 1):
+            Floor.objects.create(building=instance, floor_number=i)   
+            
+@receiver(post_save, sender=Floor)
+def create_apartments_for_floor(sender, instance, created, **kwargs):
+    if created:
+        for i in range(1, instance.num_apartments + 1):
+            Apartment.objects.create(floor=instance, appartment_number=i)
