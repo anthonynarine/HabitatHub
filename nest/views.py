@@ -1,17 +1,23 @@
 
-from rest_framework import viewsets
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, filters
+from .models import Building, Floor, Apartment, Tenant
+from .serializers import BuildingSerializer, FloorSerializer, ApartmentSerializer, TenantSerializer
 
-from .models import User
-from .serializers import UserSerializer
+class BuildingViewSet(viewsets.ModelViewSet):
+    queryset = Building.objects.all()
+    serializer_class = BuildingSerializer
 
-class UserViewSet(viewsets.ViewSet):
-    queryset = User.objects.all()
-    permission_classes = [IsAuthenticated]
-    
-    def list(self, request):
-        user_id = request.query_params.get("user_id")
-        queryset = User.objects.get(id=user_id)
-        serializer = UserSerializer(queryset)
-        return Response(serializer.data)
+class FloorViewSet(viewsets.ModelViewSet):
+    queryset = Floor.objects.all()
+    serializer_class = FloorSerializer
+
+class ApartmentViewSet(viewsets.ModelViewSet):
+    queryset = Apartment.objects.all()
+    serializer_class = ApartmentSerializer
+
+class TenantViewSet(viewsets.ModelViewSet):
+    queryset = Tenant.objects.all()
+    serializer_class = TenantSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['first_name', 'last_name']
+    # http://127.0.0.1:8000/api/tenants/?search=julia
