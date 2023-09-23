@@ -28,7 +28,8 @@ INSTALLED_APPS = [
     "corsheaders",
     #local
     "nest",
-    "users"
+    "users",
+    "ticket",
 ]
 
 MIDDLEWARE = [
